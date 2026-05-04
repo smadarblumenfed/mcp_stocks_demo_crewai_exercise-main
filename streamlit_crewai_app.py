@@ -15,26 +15,28 @@ import subprocess
 import requests
 from datetime import datetime
 
-# Import agent functions from separate module
-try:
-    from agents import run_crewai_analysis, CREWAI_AVAILABLE
-except ImportError:
-    CREWAI_AVAILABLE = False
-    st.error("Could not import agents module. Please ensure agents.py is in the same directory.")
-    
-    def run_crewai_analysis(*args, **kwargs):
-        return {"error": "Agents module not available"}
-
-# MCP API Configuration
-MCP_API_URL = "http://127.0.0.1:8001"
-
-# Page configuration
+# Page configuration must be the first Streamlit command.
 st.set_page_config(
     page_title="CrewAI + MCP Stocks Analysis",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+AGENTS_IMPORT_ERROR = ""
+
+# Import agent functions from separate module
+try:
+    from agents import run_crewai_analysis, CREWAI_AVAILABLE
+except Exception as e:
+    CREWAI_AVAILABLE = False
+    AGENTS_IMPORT_ERROR = str(e)
+    
+    def run_crewai_analysis(*args, **kwargs):
+        return {"error": "Agents module not available"}
+
+# MCP API Configuration
+MCP_API_URL = "http://127.0.0.1:8001"
 
 # Custom CSS for better styling
 st.markdown("""
@@ -157,7 +159,9 @@ def main():
     
     # Main content
     if not CREWAI_AVAILABLE:
-        st.error("CrewAI is not installed. Please install it using the command in the sidebar.")
+        st.error("CrewAI/agents failed to load. Install dependencies and check startup logs.")
+        if AGENTS_IMPORT_ERROR:
+            st.code(AGENTS_IMPORT_ERROR)
         return
     
     if not openai_api_key:
